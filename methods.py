@@ -43,10 +43,11 @@ def get_assignments(course_id: int) -> t.Dict:
     for anchor in anchors:
  
         if button := anchor.find('th').find('button'):
-            title, is_submitted = button.get('data-assignment-title'), False
+            title = button.get('data-assignment-title')
         elif a := anchor.find('th').find('a'):
-            title, is_submitted = a.text, True
+            title = a.text
 
+        is_submitted, is_graded, submission_status, score = None, None, None, None
         sub_tag = anchor.find('td', {'class': 'submissionStatus'})
         if sub_tag.find('div'):
             _status = ('submissionStatus--score', 'submissionStatus--text')
@@ -58,6 +59,7 @@ def get_assignments(course_id: int) -> t.Dict:
                 is_graded, submission_status, score = True, 'Graded', sub_div.text
             if class_name == 'submissionStatus--text':
                 is_graded, submission_status, score = False, sub_div.text, ''
+            is_submitted = False if submission_status == 'No Submission' else True
 
         released_time, due_time, late_due_time = None, None, None
         time_tags = anchor.find_all('time')
