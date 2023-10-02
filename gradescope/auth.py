@@ -8,7 +8,7 @@ import requests
 import six
 # import wsse.client.requests.auth as _wsse_auth
 
-from exceptions import handle_api_error
+from gradescope.exceptions import handle_api_error
 
 BASE_URL = "https://www.gradescope.com"
 

@@ -2,7 +2,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
-from methods import get_courses, get_assignments
+from gradescope.methods import get_courses, get_assignments
 
 assignment_types = ['is_submitted']
 

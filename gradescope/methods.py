@@ -2,7 +2,7 @@ import bs4
 import typing as t
 from datetime import datetime as dt
 
-from auth import _request
+from gradescope.auth import _request
 
 BASE_URL = 'https://www.gradescope.com/'
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S %z'
