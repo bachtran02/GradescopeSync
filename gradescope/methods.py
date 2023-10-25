@@ -43,9 +43,12 @@ def get_assignments(course_id: int) -> t.Dict:
     for anchor in anchors:
  
         if button := anchor.find('th').find('button'):
-            title = button.get('data-assignment-title')
+            assignment_title = button.get('data-assignment-title')
+            assignment_id = button.get('data-assignment-id')
+            
         elif a := anchor.find('th').find('a'):
-            title = a.text
+            assignment_title = a.text
+            assignment_id = a.get('href').split('/')[4]
 
         is_submitted, is_graded, submission_status, score = None, None, None, None
         sub_tag = anchor.find('td', {'class': 'submissionStatus'})
@@ -71,13 +74,17 @@ def get_assignments(course_id: int) -> t.Dict:
                     late_due_time = dt.strptime(time_tag.get('datetime'), TIME_FORMAT)
             elif time_tag.get('class')[0] == 'submissionTimeChart--releaseDate':
                 released_time = dt.strptime(time_tag.get('datetime'), TIME_FORMAT)
+
+        if assignment_id in [x['id'] for x in assignments]:
+            continue
         
         assignments.append({
             'course_id': course_id,
             'course_abbrv': course_abbrv,
             'course_term': course_term,
-            'course_url': BASE_URL + 'course/' + course_id,
-            'title': title,
+            'course_url': BASE_URL + 'courses/' + course_id,
+            'id': assignment_id,
+            'title': assignment_title,
             'score': score,
             'submission_status': submission_status,
             'is_graded': is_graded,
