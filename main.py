@@ -25,10 +25,10 @@ if __name__ == '__main__':
         field_title = course['course_abbrv']
         field_value = ''
         for assgn in filtered:
-            field_value += '\n' + '[{}]({})\nDue: <t:{}:R> \nLate Due: <t:{}:R>'.format(
-                assgn['title'], assgn['course_url'], 
-                int(assgn['due_time'].timestamp()),
-                int(assgn['late_due_time'].timestamp())
+            due = '<t:{}:R>'.format(int(assgn['due_time'].timestamp())) if assgn['due_time'] else '`No due`'
+            late_due = '<t:{}:R>'.format(int(assgn['late_due_time'].timestamp())) if assgn['late_due_time'] else '`No late due`'
+            field_value += '\n' + '[{}]({})\nDue: {} \nLate Due: {}'.format(
+                assgn['title'], assgn['course_url'], due, late_due
             ) + '\n'
         fields.append({'name': field_title, 'value': field_value, 'inline': True})
         
