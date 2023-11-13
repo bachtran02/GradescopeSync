@@ -25,8 +25,8 @@ if __name__ == '__main__':
         field_title = course['course_abbrv']
         field_value = ''
         for assgn in filtered:
-            due = '<t:{}:R>'.format(int(assgn['due_time'].timestamp())) if assgn['due_time'] else '`No due`'
-            late_due = '<t:{}:R>'.format(int(assgn['late_due_time'].timestamp())) if assgn['late_due_time'] else '`No late due`'
+            due = '<t:{}:R>'.format(int(assgn['due_time'].timestamp())) if assgn['due_time'] else 'N/A'
+            late_due = '<t:{}:R>'.format(int(assgn['late_due_time'].timestamp())) if assgn['late_due_time'] else '`N/A`'
             field_value += '\n' + '[{}]({})\nDue: {} \nLate Due: {}'.format(
                 assgn['title'], assgn['course_url'], due, late_due
             ) + '\n'
