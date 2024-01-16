@@ -16,7 +16,8 @@ if __name__ == '__main__':
         
         assignments = get_assignments(course['course_id'])
         filtered = sorted(list(filter(
-            lambda x: x['is_submitted'] == False,
+            lambda x: x['is_submitted'] == False and 
+            x['course_term'] == 'Spring 2024',
             assignments)), key=lambda x: x['due_time'])
         
         if not filtered:
