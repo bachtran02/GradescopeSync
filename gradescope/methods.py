@@ -4,7 +4,7 @@ from datetime import datetime as dt
 
 from gradescope.auth import _request
 
-BASE_URL = 'https://www.gradescope.com/'
+BASE_URL = 'https://www.gradescope.com'
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S %z'
 
 def get_courses() -> t.Dict:
@@ -22,7 +22,7 @@ def get_courses() -> t.Dict:
     soup = bs4.BeautifulSoup(response.content, features="html.parser")
     return list(filter(lambda s: s, map(
         lambda tag: {
-            'course_id': tag.get('href').split("/")[-1],
+            'course_id': int(tag.get('href').split("/")[-1]),
             'course_abbrv': tag.find_all('h3', {'class': 'courseBox--shortname'})[0].text,
             'course_name': tag.find_all('div', {'class': 'courseBox--name'})[0].text,
         }, soup.find_all("a", {"class": "courseBox"}))))
@@ -46,7 +46,7 @@ def get_assignments(course_id: int) -> t.Dict:
  
         if button := anchor.find('th').find('button'):
             assignment_title = button.get('data-assignment-title')
-            assignment_id = button.get('data-assignment-id')
+            assignment_id = int(button.get('data-assignment-id'))
             
         elif a := anchor.find('th').find('a'):
             assignment_title = a.text
@@ -88,7 +88,7 @@ def get_assignments(course_id: int) -> t.Dict:
             'course_id': course_id,
             'course_abbrv': course_abbrv,
             'course_term': course_term,
-            'course_url': BASE_URL + 'courses/' + course_id,
+            'course_url': f'{BASE_URL}/courses/{course_id}',
             'id': assignment_id,
             'title': assignment_title,
             'score': score,
