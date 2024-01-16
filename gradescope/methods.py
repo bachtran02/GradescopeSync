@@ -43,6 +43,7 @@ def get_assignments(course_id: int) -> t.Dict:
     for anchor in anchors:
 
         assignment_title, assignment_id = None, None
+        is_duplicate = False
  
         if button := anchor.find('th').find('button'):
             assignment_title = button.get('data-assignment-title')
@@ -81,23 +82,26 @@ def get_assignments(course_id: int) -> t.Dict:
             elif time_tag.get('class')[0] == 'submissionTimeChart--releaseDate':
                 released_time = dt.strptime(time_tag.get('datetime'), TIME_FORMAT)
 
-        if assignment_id in [x['id'] for x in assignments]:
-            continue
-        
-        assignments.append({
-            'course_id': course_id,
-            'course_abbrv': course_abbrv,
-            'course_term': course_term,
-            'course_url': f'{BASE_URL}/courses/{course_id}',
-            'id': assignment_id,
-            'title': assignment_title,
-            'score': score,
-            'submission_status': submission_status,
-            'is_graded': is_graded,
-            'is_submitted': is_submitted,
-            'released_time': released_time,
-            'due_time': due_time,
-            'late_due_time': late_due_time,
-        })
+        for assignment in assignments:
+            if assignment_id == assignment['id'] and assignment_title == assignment['title']:
+                is_duplicate = True
+                break
+
+        if not is_duplicate:
+            assignments.append({
+                'course_id': course_id,
+                'course_abbrv': course_abbrv,
+                'course_term': course_term,
+                'course_url': f'{BASE_URL}/courses/{course_id}',
+                'id': assignment_id,
+                'title': assignment_title,
+                'score': score,
+                'submission_status': submission_status,
+                'is_graded': is_graded,
+                'is_submitted': is_submitted,
+                'released_time': released_time,
+                'due_time': due_time,
+                'late_due_time': late_due_time,
+            })
 
     return assignments
