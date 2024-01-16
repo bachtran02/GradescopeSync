@@ -41,6 +41,8 @@ def get_assignments(course_id: int) -> t.Dict:
 
     assignments = []
     for anchor in anchors:
+
+        assignment_title, assignment_id = None, None
  
         if button := anchor.find('th').find('button'):
             assignment_title = button.get('data-assignment-title')
@@ -48,7 +50,11 @@ def get_assignments(course_id: int) -> t.Dict:
             
         elif a := anchor.find('th').find('a'):
             assignment_title = a.text
-            assignment_id = a.get('href').split('/')[4]
+            assignment_id = int(a.get('href').split('/')[4])
+
+        else:
+            th = anchor.find('th')
+            assignment_title = th.text
 
         is_submitted, is_graded, submission_status, score = None, None, None, None
         sub_tag = anchor.find('td', {'class': 'submissionStatus'})
