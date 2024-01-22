@@ -6,7 +6,7 @@ gradescope-discohook is a simple Python script that scrapes data from [Gradescop
 
 ## How to set up
 
-> Feel free to make sure of the code for your own purposes. Here is how I set it up and use it at the moment.
+> Feel free to make use of the code for your own purposes. Here is how I set it up and use it at the moment.
 
 1. Clone the repo.
 2. Create an `.env` file using this [template](https://github.com/bachtran02/gradescope-discohook/blob/master/.env.example) and enter your Gradescope credentials. 
