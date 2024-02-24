@@ -1,6 +1,7 @@
 import os
 import requests
 from dotenv import load_dotenv
+from datetime import datetime as dt
 
 from gradescope.methods import get_courses, get_assignments
 
@@ -16,8 +17,10 @@ if __name__ == '__main__':
         
         assignments = get_assignments(course['course_id'])
         filtered = sorted(list(filter(
-            lambda x: x['is_submitted'] == False and 
-            x['course_term'] == 'Spring 2024',
+            lambda x: 
+                x['is_submitted'] == False and 
+                x['course_term'] == 'Spring 2024' and
+                isinstance(x['due_time'], dt),
             assignments)), key=lambda x: x['due_time'])
         
         if not filtered:
