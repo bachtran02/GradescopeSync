@@ -68,3 +68,6 @@ if __name__ == '__main__':
             'avatar_url': '',
             'embeds': embeds
         })
+
+    if req.status_code != 204:  # normal status code
+        req.raise_for_status()
