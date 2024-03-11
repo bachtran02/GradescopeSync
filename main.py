@@ -12,7 +12,9 @@ if __name__ == '__main__':
     load_dotenv()
 
     embeds = []
-    fields = []
+    todue_fields, pastdue_fields = [], []
+    now = dt.now().timestamp()  # Pactific Time
+
     for course in get_courses():
         
         assignments = get_assignments(course['course_id'])
@@ -26,22 +28,37 @@ if __name__ == '__main__':
         if not filtered:
             continue
         
+        to_due, past_due = '', ''
         field_title = course['course_abbrv']
-        field_value = ''
-        for assgn in filtered:
-            due = '<t:{}:R>'.format(int(assgn['due_time'].timestamp())) if assgn['due_time'] else 'N/A'
+        for assgn in filtered:  # max 8 assignments for each field (more may result in exception)
+            
+            due_ts = int(assgn['due_time'].timestamp())
+            due = '<t:{}:R>'.format(due_ts) if assgn['due_time'] else '`N/A`'
             late_due = '<t:{}:R>'.format(int(assgn['late_due_time'].timestamp())) if assgn['late_due_time'] else '`N/A`'
-            field_value += '\n' + '[{}]({})\nDue: {} \nLate Due: {}'.format(
-                assgn['title'], assgn['course_url'], due, late_due
-            ) + '\n'
-        fields.append({'name': field_title, 'value': field_value, 'inline': True})
-        
+
+            if now < due_ts:
+                to_due += '\n' + '[{}]({})\nDue: {} \nLate Due: {}'.format(
+                    assgn['title'], assgn['course_url'], due, late_due) + '\n'
+            else:
+                past_due += '\n' + '[{}]({})\nDue: {} \nLate Due: {}'.format(
+                    assgn['title'], assgn['course_url'], due, late_due) + '\n'
+                
+        todue_fields.append({'name': field_title, 'value': to_due, 'inline': True})
+        pastdue_fields.append({'name': field_title, 'value': past_due, 'inline': True})
+    
+    embeds.append({
+        'title': 'Daily Reminder',
+        'type': 'rich',
+        'color': 0xFF3131,
+        'fields': pastdue_fields,
+        'description': f'**Type**: `No Submission`, `Past Due`',
+    })
     embeds.append({
         'title': 'Daily Reminder',
         'type': 'rich',
         'color': 0x90EE90,
-        'fields': fields,
-        'description': f'**Type**: `No Submission`',
+        'fields': todue_fields,
+        'description': f'**Type**: `No Submission`, `To Due`',
     })
 
     req = requests.post(
