@@ -2,7 +2,9 @@
 
 gradescope-discohook is a simple Python script that scrapes data from [Gradescope](https://www.gradescope.com/) and send to [Discord](https://discord.com/) text channel via [Discord Webhook](https://discord.com/developers/docs/resources/webhook)
 
- <img src="https://github.com/bachtran02/gradescope-discohook/assets/83796054/99a6fc2e-77f3-47e3-9ac4-4df968357e50" width="450">
+ <img src="https://github.com/bachtran02/gradescope-discohook/assets/83796054/42e4f3e0-863b-4b03-88d6-4d5f1b6bd0e2" width="450">
+
+ <img src="https://github.com/bachtran02/gradescope-discohook/assets/83796054/b6bb7015-401b-485c-968c-91baa974381e" width="450">
 
 ## How to set up
 
