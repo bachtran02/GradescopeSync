@@ -1,19 +1,19 @@
 import os
 import requests
 from dotenv import load_dotenv
-from datetime import datetime as dt
+from datetime import timezone, timedelta, datetime as dt
 
 from gradescope.methods import get_courses, get_assignments
 
-assignment_types = ['is_submitted']
-
 if __name__ == '__main__':
-    
     load_dotenv()
 
     embeds = []
-    todue_fields, pastdue_fields = [], []
-    now = dt.now().timestamp()  # Pactific Time
+    pastdue = str()
+    todue_list, todue_fields = [], []
+    due_today_count = 0
+    
+    now = dt.now(timezone.utc)
 
     for course in get_courses():
         
@@ -25,40 +25,47 @@ if __name__ == '__main__':
                 isinstance(x['due_time'], dt),
             assignments)), key=lambda x: x['due_time'])
         
-        if not filtered:
-            continue
+        if not filtered: continue
         
-        to_due, past_due = '', ''
+        todue_str = str()
         field_title = course['course_abbrv']
         for assgn in filtered:  # max 8 assignments for each field (more may result in exception)
             
-            due_ts = int(assgn['due_time'].timestamp())
-            due = '<t:{}:R>'.format(due_ts) if assgn['due_time'] else '`N/A`'
-            late_due = '<t:{}:R>'.format(int(assgn['late_due_time'].timestamp())) if assgn['late_due_time'] else '`N/A`'
+            due_dt = assgn['due_time']
+            due = '<t:{}:R>'.format(int(due_dt.timestamp()))
+            late_due = '<t:{}:R>'.format(int(late_due.timestamp())) if (late_due := assgn.get('late_due_time')) else '`N/A`'
 
-            if now < due_ts:
-                to_due += '\n' + '[{}]({})\nDue: {} \nLate Due: {}'.format(
-                    assgn['title'], assgn['course_url'], due, late_due) + '\n'
+            if now < due_dt:
+                todue_str += '\n[{}]({})\nDue: {} \nLate Due: {}\n'.format(assgn['title'], assgn['url'], due, late_due)
+                todue_list.append({'title': assgn['title'], 'url': assgn['url'], 'due': due_dt, 'course': assgn['course_abbrv']})
+                if now + timedelta(days=1) > due_dt:
+                    due_today_count += 1
             else:
-                past_due += '\n' + '[{}]({})\nDue: {} \nLate Due: {}'.format(
-                    assgn['title'], assgn['course_url'], due, late_due) + '\n'
-                
-        todue_fields.append({'name': field_title, 'value': to_due, 'inline': True})
-        pastdue_fields.append({'name': field_title, 'value': past_due, 'inline': True})
-    
+                pastdue += '- [{}]({}) - {} {}\n'.format(
+                    assgn['title'], assgn['url'], assgn['course_abbrv'], due)
+
+        if todue_str:
+            todue_fields.append({'name': field_title, 'value': todue_str, 'inline': True})
+
+    todue_list = sorted(todue_list, key=lambda x: x['due'])
+    todue_desc = '## Summary\n- Total: **{}**\n- Due Today: **{}**\n'.format(len(todue_list), due_today_count)
+    if todue_list and (nextdue := todue_list[0]):
+        todue_desc += '- Next due: **[{}]({}) ({}) <t:{}:R>**'.format(
+            nextdue['title'], nextdue['url'], nextdue['course'], int(nextdue['due'].timestamp()))
+
     embeds.append({
-        'title': 'Daily Reminder',
+        'title': '⚠️ Missing Submission',
         'type': 'rich',
         'color': 0xFF3131,
-        'fields': pastdue_fields,
-        'description': f'**Type**: `No Submission`, `Past Due`',
+        'description': pastdue,
     })
+
     embeds.append({
-        'title': 'Daily Reminder',
+        'title': '🔔 Daily Homework Reminder',
         'type': 'rich',
         'color': 0x90EE90,
         'fields': todue_fields,
-        'description': f'**Type**: `No Submission`, `To Due`',
+        'description': todue_desc,
     })
 
     req = requests.post(
