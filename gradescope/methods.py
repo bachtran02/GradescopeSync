@@ -95,6 +95,7 @@ def get_assignments(course_id: int) -> t.Dict:
                 'course_url': f'{BASE_URL}/courses/{course_id}',
                 'id': assignment_id,
                 'title': assignment_title,
+                'url': f'{BASE_URL}/courses/{course_id}/assignments/{assignment_id}',
                 'score': score,
                 'submission_status': submission_status,
                 'is_graded': is_graded,
