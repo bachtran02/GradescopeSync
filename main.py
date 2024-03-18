@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     for course in get_courses():
         
-        assignments = get_assignments(course['course_id'])
+        assignments = get_assignments(course['id'])
         filtered = sorted(list(filter(
             lambda x: 
                 x['is_submitted'] == False and 
@@ -28,7 +28,7 @@ if __name__ == '__main__':
         if not filtered: continue
         
         todue_str = str()
-        field_title = course['course_abbrv']
+        field_title = course['abbrv']
         for assgn in filtered:  # max 8 assignments for each field (more may result in exception)
             
             due_dt = assgn['due_time']
