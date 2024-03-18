@@ -12,20 +12,41 @@ def get_courses() -> t.Dict:
 
     >>> get_courses()
     [{
-        'course_id': '000000',
-        'course_abbrv': 'CS 101',
-        'course_name': 'Hello, world!'
+        'id': '000000',
+        'abbrv': 'CS 101',
+        'name': 'Hello, world!',
+        'term': 'Fall 2017',
+        'type': 'student'/'instructor',
     }]
     """
 
     response = _request(endpoint="account")
     soup = bs4.BeautifulSoup(response.content, features="html.parser")
-    return list(filter(lambda s: s, map(
-        lambda tag: {
-            'course_id': int(tag.get('href').split("/")[-1]),
-            'course_abbrv': tag.find_all('h3', {'class': 'courseBox--shortname'})[0].text,
-            'course_name': tag.find_all('div', {'class': 'courseBox--name'})[0].text,
-        }, soup.find_all("a", {"class": "courseBox"}))))
+    
+    courses = []
+
+    course_types = soup.find_all('h1', {'class': 'pageHeading'})
+    course_lists = soup.find_all('div', {'class': 'courseList'})
+
+    assert len(course_types) == len(course_lists)
+
+    for clist, ctype in zip(course_lists, course_types):
+        terms = clist.find_all('div', 'courseList--term')
+        tcourses = clist.find_all('div', 'courseList--coursesForTerm')
+        
+        assert len(terms) == len(tcourses)
+
+        for term, tcourse in zip(terms, tcourses):
+            courses.extend(list(map(
+                lambda tag: {
+                    'id': int(tag.get('href').split("/")[-1]),
+                    'abbrv': tag.find('h3', {'class': 'courseBox--shortname'}).text,
+                    'name': tag.find('div', {'class': 'courseBox--name'}).text,
+                    'term': term.text,
+                    'type': ctype.text.split()[0].lower(),
+                    # 'assignment_count': int(tag.find('div', {'class': 'courseBox--assignments'}).text.split()[0]),
+                }, tcourse.find_all("a", {"class": "courseBox"}))))
+    return courses
 
 
 def get_assignments(course_id: int) -> t.Dict:
