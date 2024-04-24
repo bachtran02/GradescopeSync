@@ -29,7 +29,7 @@ if __name__ == '__main__':
         
         todue_str = str()
         field_title = course['abbrv']
-        for assgn in filtered:  # max 8 assignments for each field (more may result in exception)
+        for assgn in filtered[:8]:  # max 8 assignments for each field (more may result in exception)
             
             due_dt = assgn['due_time']
             due = '<t:{}:R>'.format(int(due_dt.timestamp()))
