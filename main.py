@@ -16,12 +16,12 @@ if __name__ == '__main__':
     now = dt.now(timezone.utc)
 
     for course in get_courses():
-        
+
         assignments = get_assignments(course['id'])
         filtered = sorted(list(filter(
             lambda x: 
                 x['is_submitted'] == False and 
-                x['course_term'] == 'Spring 2024' and
+                x['course_term'] == 'Fall 2024' and
                 isinstance(x['due_time'], dt),
             assignments)), key=lambda x: x['due_time'])
         
