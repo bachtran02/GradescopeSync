@@ -55,7 +55,7 @@ class AssignmentClient(Client):
             late_due_time = None
 
             if (a := row_items[0].find('a')):
-                aid = a.get('href').rsplit('/',1)[1]
+                aid = a.get('href').split('/')[4]
             elif (b := row_items[0].find('button')):
                 aid = b.get('data-assignment-id')
 

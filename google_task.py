@@ -58,7 +58,7 @@ if __name__ == "__main__":
         key = assignment.cid + assignment.aid
 
         # process & transform time
-        # NOTE:
+        # NOTE: <https://googleapis.github.io/google-api-python-client/docs/dyn/tasks_v1.tasks.html#insert>
         # > The due date only records date information; the time portion  
         # > of the timestamp is discarded when setting the due date.
         due = dt.strptime(assignment.due_time, '%Y-%m-%d %H:%M:%S %z')
