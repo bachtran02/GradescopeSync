@@ -2,7 +2,10 @@ import typing as t
 from collections import defaultdict
 from bs4 import BeautifulSoup
 
-from client import Client
+try:
+   from client import Client
+except ModuleNotFoundError:
+   from .client import Client
 
 class Course:
     

@@ -3,7 +3,10 @@ import typing as t
 from bs4 import BeautifulSoup
 from enum import Enum
 
-from client import Client
+try:
+   from client import Client
+except ModuleNotFoundError:
+   from .client import Client
 
 class SubmissionStatus(Enum):
     UNSUBMITTED = 0
@@ -12,8 +15,9 @@ class SubmissionStatus(Enum):
 
 class Assignment:
 
-    def __init__(self, aid, name, submission_status, released_time, due_time, late_due_time) -> None:
+    def __init__(self, aid, cid, name, submission_status, released_time, due_time, late_due_time) -> None:
         self.aid = aid
+        self.cid = cid
         self.name = name
         self.submission_status = submission_status
         self.released_time = released_time
@@ -39,7 +43,7 @@ class AssignmentClient(Client):
         assignment_table = parsed_assignment_resp.find('table', attrs={'id': 'assignments-student-table'})
         assignment_rows = assignment_table.find('tbody')
 
-        assignment_table = []
+        assignments = []
         for assignment_row in assignment_rows.findAll('tr', attrs={'role': 'row'}):
             row_items = list(assignment_row.children)
 
@@ -52,6 +56,8 @@ class AssignmentClient(Client):
 
             if (a := row_items[0].find('a')):
                 aid = a.get('href').rsplit('/',1)[1]
+            elif (b := row_items[0].find('button')):
+                aid = b.get('data-assignment-id')
 
             for c in row_items[1].children:
                 if cls := c.get('class'):
@@ -74,8 +80,11 @@ class AssignmentClient(Client):
                 if len(times) == 3:
                     late_due_time = times[2].get('datetime')
             
-            assignment_table.append(
-                Assignment(aid, name, submission_status,
-                           released_time, due_time, late_due_time))
+            assignments.append(
+                Assignment(aid, course_id, name, submission_status,
+                    released_time, due_time, late_due_time))
         
-        return assignment_table
+        return GetAssignmentsResult(
+            course_id=course_id,
+            assignments=assignments
+        )

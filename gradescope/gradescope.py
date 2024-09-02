@@ -28,10 +28,10 @@ def _ensure_login(func):
 class Gradescope():
     BASE_URL = 'https://www.gradescope.com'
     
-    def __init__(self, email, pswd) -> None:
+    def __init__(self, username, password) -> None:
 
-        self.email = email
-        self.password = pswd
+        self.username = username
+        self.password = password
 
         self.session = requests.Session()
         self.state = ConnState.INIT
@@ -52,7 +52,7 @@ class Gradescope():
 
         login_data = {
             "utf8": "✓",
-            "session[email]": self.email,
+            "session[email]": self.username,
             "session[password]": self.password,
             "session[remember_me]": 0,
             "commit": "Log In",
