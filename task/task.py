@@ -3,6 +3,7 @@ import os.path
 import typing as t
 from collections import defaultdict
 from datetime import datetime, timezone
+import logging as log
 
 from gradescope.assignment import Assignment
 
@@ -70,7 +71,7 @@ class GTask:
         }
     
     def __repr__(self) -> str:
-        return f'<GTask task_id={self.tid} title="{self.title}">'
+        return f'<GTask id={self.tid} title="{self.title}">'
 
 
 class GTasklist:
@@ -140,6 +141,7 @@ class GSTaskClient:
                 token.write(self.credentials.to_json())
         
         self.service = build("tasks", "v1", credentials=self.credentials)
+        log.info('Successfully authenticated.')
 
     def init_tasklist(self):
         self.gs_tasklist = None
@@ -168,12 +170,14 @@ class GSTaskClient:
 
         if not self.gs_tasklist:
             raise Exception('Failed to initiate tasklist')
+        log.info('Tasklist initiated.')
 
 
     def cache_tasks(self):
 
         tasks = self.service.tasks().list(
             tasklist=self.gs_tasklist.lid,
+            showHidden=True,
             dueMin=datetime.now(timezone.utc).isoformat()
         ).execute()
         
@@ -188,8 +192,11 @@ class GSTaskClient:
                 if matches:
                     course_id, assignment_id = matches[0]
                     self.tasks_cache[course_id+assignment_id] = task
+        
+        self._log_cached()
 
     def insert_task(self, key, task_body):
+        log.debug(f'Received request to insert task: key={key} task_body={task_body}')
 
         t = self.service.tasks().insert(
             tasklist=self.gs_tasklist.lid,
@@ -198,8 +205,10 @@ class GSTaskClient:
 
         # update cache with added task
         self.tasks_cache[key] = t
+        self._log_cached()
 
     def patch_task(self, key, task_id, task_body):
+        log.debug(f'Received request to patch task: key={key} task_body={task_body}')
 
         t = self.service.tasks().patch(
             tasklist=self.gs_tasklist.lid,
@@ -208,21 +217,20 @@ class GSTaskClient:
         ).execute()
 
         self.tasks_cache[key] = t
-
+        self._log_cached()
 
     def update_tasks(self, updated_tasks: t.Dict[str, GTask]):
 
-        for key in updated_tasks:        
+        for key in updated_tasks:
             if key not in self.tasks_cache:
-                # insert task
-                self.insert_task(key, updated_tasks[key])
+                self.insert_task(key, updated_tasks[key])   # insert task
             elif self.tasks_cache[key].to_dict() != updated_tasks[key]:
-
-                print(self.tasks_cache[key].to_dict())
-                print(updated_tasks[key])
-
                 task_id = self.tasks_cache[key].tid
-                print(task_id)
+                self.patch_task(key, task_id, updated_tasks[key])   # patch task
 
-                # patch task
-                self.patch_task(key, task_id, updated_tasks[key])
+    # log cached task
+    def _log_cached(self):
+        log.debug('Cached tasks:')
+        for i, id in enumerate(self.tasks_cache):
+            task = self.tasks_cache[id]
+            log.debug(f'\ttask {i + 1}: key={id} task_id={task.tid} title={task.title}')

@@ -1,7 +1,9 @@
 import os
 import sys
+import time
 import typing as t
 from dotenv import load_dotenv
+import logging
 
 from collections import defaultdict
 from datetime import timezone, datetime as dt
@@ -9,13 +11,42 @@ from datetime import timezone, datetime as dt
 from task.task import GSTaskClient, GTask
 from gradescope.gradescope import Gradescope
 from gradescope.course import Course
-from gradescope.assignment import SubmissionStatus
+from gradescope.assignment import Assignment, SubmissionStatus as SubStatus
 
 load_dotenv()
 
+# Set up logging
+logging.basicConfig(
+    level=logging.DEBUG, 
+    format='%(asctime)s | %(levelname)-8s | %(name)s | %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout), # Log to stdout
+        logging.FileHandler('logs/main.log')
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
 ASSIGNMENT_URL_FMT = 'https://www.gradescope.com/courses/{}/assignments/{}'
 
-if __name__ == "__main__":
+def assignment_to_task(assgn: Assignment, course_shortname: str) -> GTask:
+
+    # process & transform time
+    # NOTE: <https://googleapis.github.io/google-api-python-client/docs/dyn/tasks_v1.tasks.html#insert>
+    # > The due date only records date information; the time portion  
+    # > of the timestamp is discarded when setting the due date.
+    due = dt.strptime(assgn.due_time, '%Y-%m-%d %H:%M:%S %z')
+    due = dt(due.year, due.month, due.day, 0, 0, 0, tzinfo=timezone.utc)
+    due = due.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+
+    return {
+        'title': f'[{course_shortname}] {assgn.name}',
+        'due': due,
+        'status': 'needsAction' if assgn.submission_status == SubStatus.UNSUBMITTED else 'completed',
+        'notes': ASSIGNMENT_URL_FMT.format(assgn.cid, assgn.aid)
+    }
+
+def main():
 
     gs = Gradescope(
         username=os.getenv('USERNAME'),
@@ -56,26 +87,14 @@ if __name__ == "__main__":
     tasks = defaultdict(GTask)
     for assignment in assignments:
         key = assignment.cid + assignment.aid
-
-        # process & transform time
-        # NOTE: <https://googleapis.github.io/google-api-python-client/docs/dyn/tasks_v1.tasks.html#insert>
-        # > The due date only records date information; the time portion  
-        # > of the timestamp is discarded when setting the due date.
-        due = dt.strptime(assignment.due_time, '%Y-%m-%d %H:%M:%S %z')
-        due = dt(due.year, due.month, due.day, 0, 0, 0, tzinfo=timezone.utc)
-        due = due.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
-
-        # process status
-        if assignment.submission_status == SubmissionStatus.UNSUBMITTED:
-            status = 'needsAction'
-        else:
-            status = 'completed'
-
-        tasks[key] = {
-            'title': f'[{student_courses[assignment.cid].shortname}] {assignment.name}',
-            'due': due,
-            'status': status,
-            'notes': ASSIGNMENT_URL_FMT.format(assignment.cid, assignment.aid)
-        }
+        tasks[key] = assignment_to_task(
+            assgn=assignment,
+            course_shortname=student_courses[assignment.cid].shortname)
 
     client.update_tasks(tasks)
+
+if __name__ == "__main__":
+    while True:
+        main()
+        logging.info('Sync completed. Next sync cycle in 10 minutes')
+        time.sleep(600)
