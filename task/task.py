@@ -135,7 +135,7 @@ class GSTaskClient:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     self.client_secret_file, self.SCOPES)
             
-                self.credentials = flow.run_local_server(host='localhost', port=8080, bind_addr=None, open_browser=False)
+                self.credentials = flow.run_local_server(bind_addr='0.0.0.0', open_browser=False)
             # Save the credentials for the next run
             with open(self.token_file, "w") as token:
                 token.write(self.credentials.to_json())
