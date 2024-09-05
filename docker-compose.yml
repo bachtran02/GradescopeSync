@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gs_sync
+    environment:
+      # disable output buffering which allows 
+      # print() to be output to docker logs
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/app/logs
+      - ./.credentials:/app/.credentials
