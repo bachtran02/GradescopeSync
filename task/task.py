@@ -233,4 +233,7 @@ class GSTaskClient:
         log.debug('Cached tasks:')
         for i, id in enumerate(self.tasks_cache):
             task = self.tasks_cache[id]
-            log.debug(f'\ttask {i + 1}: key={id} task_id={task.tid} title={task.title}')
+            if type(task) == GTask:
+                log.debug(f'\ttask {i + 1}: key={id} task_id={task.tid} title={task.title}')
+            else:
+                log.debug(f'\ttask {i + 1}: key={id} task_id={task.get("id")} title={task.get("title")}')
