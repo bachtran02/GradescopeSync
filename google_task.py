@@ -48,14 +48,6 @@ def assignment_to_task(assgn: Assignment, course_shortname: str) -> GTask:
 
 def main():
 
-    gs = Gradescope(
-        username=os.getenv('USERNAME'),
-        password=os.getenv('PASSWORD'))
-    
-    if not gs.login():
-        print('failed to log in Gradescope')
-        sys.exit(1)
-    
     # TODO: handle google task api error
     client = GSTaskClient(
         client_secret_file=os.getenv('CLIENT_SECRET_FILE'),
@@ -63,38 +55,50 @@ def main():
         tasklist_name='gs_deadlines'
     )
 
-    client.authenticate()       # autheticate
+    gs = Gradescope(
+        username=os.getenv('USERNAME'),
+        password=os.getenv('PASSWORD'))
+    
+    if not gs.login():
+        print('failed to log in Gradescope')
+        sys.exit(1)
+
+    client.authenticate()
     client.init_tasklist()      # initiate tasklist, cache existing tasks
 
-    assignments = []
-    student_courses: t.List[Course] = gs.get_courses().student_courses
-
-    # get Fall 24 courses
-    fa24_courses = list(filter(
-        lambda course: course.term == "Fall" and course.year == "2024",
-            student_courses.values()))
-    
-    for course in fa24_courses:
-        res = gs.get_assignments(course.cid)
-        assignments.extend(res.assignments)
-
-    # only retain undue assignments
-    assignments = list(filter(
-        lambda a: dt.now(timezone.utc) < dt.strptime(a.due_time, '%Y-%m-%d %H:%M:%S %z'), 
-            assignments))
-
-    # convert course + assignment into task out here
-    tasks = defaultdict(GTask)
-    for assignment in assignments:
-        key = assignment.cid + assignment.aid
-        tasks[key] = assignment_to_task(
-            assgn=assignment,
-            course_shortname=student_courses[assignment.cid].shortname)
-
-    client.update_tasks(tasks)
-
-if __name__ == "__main__":
     while True:
-        main()
+    
+        assignments = []
+        student_courses: t.List[Course] = gs.get_courses().student_courses
+
+        # get Fall 24 courses
+        fa24_courses = list(filter(
+            lambda course: course.term == "Fall" and course.year == "2024",
+                student_courses.values()))
+        
+        for course in fa24_courses:
+            res = gs.get_assignments(course.cid)
+            assignments.extend(res.assignments)
+
+        # only retain undue assignments
+        assignments = list(filter(
+            lambda a: dt.now(timezone.utc) < dt.strptime(a.due_time, '%Y-%m-%d %H:%M:%S %z'), 
+                assignments))
+
+        # convert course + assignment into task out here
+        tasks = defaultdict(GTask)
+        for assignment in assignments:
+            key = assignment.cid + assignment.aid
+            tasks[key] = assignment_to_task(
+                assgn=assignment,
+                course_shortname=student_courses[assignment.cid].shortname)
+
+        client.update_tasks(tasks)
+        
         logging.info('Sync completed. Next sync cycle in 10 minutes')
         time.sleep(600)
+
+        client.authenticate()
+
+if __name__ == "__main__":
+        main()
