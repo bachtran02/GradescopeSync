@@ -203,8 +203,8 @@ class GSTaskClient:
             body=task_body,
         ).execute()
 
-        # update cache with added task
-        self.tasks_cache[key] = t
+        task = GTask.from_dict(t)
+        self.tasks_cache[key] = task    # update cache with added task
         self._log_cached()
 
     def patch_task(self, key, task_id, task_body):
@@ -216,7 +216,8 @@ class GSTaskClient:
             body=task_body,
         ).execute()
 
-        self.tasks_cache[key] = t
+        task = GTask.from_dict(t)
+        self.tasks_cache[key] = task    # update cache with patched task
         self._log_cached()
 
     def update_tasks(self, updated_tasks: t.Dict[str, GTask]):
