@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from enum import Enum
+from datetime import datetime
 
 try:
    from course import Course, CourseClient
@@ -76,4 +77,8 @@ class Gradescope():
     def get_assignments(self, course_id: str):
         with AssignmentClient(self.session) as client:
             return client.get_assignments(course_id)
-        
+    
+    @staticmethod
+    def to_datetime_object(datetime_str: str) -> datetime:
+        # Gradescope datetime string should be in this format: YYYY-MM-DD HH:MM:SS z
+        return datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S %z")
