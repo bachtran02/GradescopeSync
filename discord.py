@@ -8,10 +8,13 @@ from gradescope.course import Course
 from gradescope.gradescope import Gradescope
 from gradescope.assignment import Assignment, SubmissionStatus as SubStatus
 
+GRADESCOPE_BASE_URL = 'https://www.gradescope.com'
 
 load_dotenv()
 
 if __name__ == '__main__':
+
+    embeds = []
 
     gs = Gradescope(
         username=os.getenv('USERNAME'),
@@ -23,37 +26,112 @@ if __name__ == '__main__':
     sp25_courses = list(filter(
         lambda course: course.term == 'Spring' and course.year == '2025',
             student_courses.values()))
+    
+    # non-past due assignments, submitted vs unsubmitted
+    # past due assignments
+
+    past_due = ''
+    todue_list, todue_fields = [], []
+    due_count, due_today_count = 0, 0
+    nextdue_assign, nextdue_url, nextdue_crs, nextdue_dt = None, None, None, None
 
     for course in sp25_courses:
-        if course.cid == '960168':
-            res = gs.get_assignments(course.cid)
-            assignments = res.assignments
-
-            sort_by_deadline_fn = lambda x: gs.to_datetime_object(x.due_time)
-            # sort assignments by deadline
-            sorted_assignments = sorted(assignments, key=sort_by_deadline_fn)
+        res = gs.get_assignments(course.cid)
+        assignments = res.assignments
+        assignments_with_dt = []
         
-            for assgn in sorted_assignments:
-                print(assgn.due_time)
+        for assgn in assignments:
+            due_datetime, late_due_datetime = None, None
 
-    # print(sp25_courses)
-    
-    # for course in student_courses.get('708063'):
-    #     res = gs.get_assignments(course.cid)
-    #     print(res)
-    #     filtered = sorted(list(filter(
-    #         lambda x: 
-    #             x. 
+            if assgn.due_time:
+                due_datetime = gs.to_datetime_object(assgn.due_time)
+            if assgn.late_due_time:
+                late_due_datetime = gs.to_datetime_object(assgn.late_due_time)
+        
+            assignments_with_dt.append((assgn, due_datetime, late_due_datetime))
+
+        # sort assignments by due deadline
+        sorted_assignments = sorted(assignments_with_dt, key=lambda x: x[1])
+
+        now = dt.now(timezone.utc)
+        todue_str = ''
+
+        for assgn_with_dt in sorted_assignments:
+
+            assgn: Assignment = assgn_with_dt[0]
+            due_dt, late_due_dt = assgn_with_dt[1:]
+
+            assgn_url = '{}/courses/{}/assignments/{}'.format(
+                GRADESCOPE_BASE_URL, course.cid, assgn.aid)
+
+            if due_dt:
+                due = '<t:{}:R>'.format(int(due_dt.timestamp()))
+            else:
+                due = '`N/A`'
+
+            if late_due_dt:
+                late_due = '<t:{}:R>'.format(int(late_due_dt.timestamp()))
+            else:
+                late_due = '`N/A`'
+
+            # timezone aware or nah
+            if now < due_dt:   # undue assignments
+
+                # find next due assignment across all courses
+                if nextdue_assign is None or due_dt < nextdue_dt:
+                    nextdue_assign = assgn.name
+                    nextdue_url = assgn_url
+                    nextdue_crs = course.shortname
+                    nextdue_dt = due_dt
+
+                if assgn.submission_status == SubStatus.UNSUBMITTED:
+                    submission_emoji = '🟡' 
+                else:
+                    submission_emoji = '✅'
+
+                todue_str += '\n{} [{}]({})\nDue: {} \nLate Due: {}\n'.format(
+                    submission_emoji, assgn.name, assgn_url, due, late_due)
                 
-    #         res)), key=lambda x: x['due_time'])
+                if now + timedelta(days=1) > due_dt:
+                    due_today_count += 1
+                due_count += 1
+                
+            else:
+                # past due assignments
+                if assgn.submission_status == SubStatus.UNSUBMITTED:
+                    past_due += '- [{}]({}) - {} {}\n'.format(
+                        assgn.name, assgn_url, course.shortname, due_dt)
 
-    # assignments = gs.get_assignments('708063').assignments
-    # filtered = sorted(
-    #     list(filter(
-    #         lambda x:
-    #             x.submission_status == SubStatus.UNSUBMITTED and
-    #             x.due_time, assignments)),
-    #     key=lambda x: x.due_time)
+        if todue_str:
+            todue_fields.append({'name': course.shortname, 'value': todue_str, 'inline': True})
 
-    # for assgn in filtered:
-    #     print(assgn.due_time)
+    todue_desc = '## Summary\n- Total: **{}**\n- Due Today: **{}**\n'.format(due_count, due_today_count)
+    if nextdue_assign:
+        todue_desc += '- Next due: **[{}]({}) ({}) <t:{}:R>**'.format(
+            nextdue_assign, nextdue_url, nextdue_crs, int(nextdue_dt.timestamp()))
+        
+    embeds.append({
+        'title': 'Missing Submission',
+        'type': 'rich',
+        'color': 0xFF3131,
+        'description': past_due,
+    })
+
+    embeds.append({
+        'title': 'Homework Reminder',
+        'type': 'rich',
+        'color': 0x90EE90,
+        'fields': todue_fields,
+        'description': todue_desc,
+    })
+
+    req = requests.post(
+        url=os.getenv('WEBHOOK_URL'),
+        json={
+            'username': 'Gradescope',
+            'avatar_url': '',
+            'embeds': embeds
+        })
+    
+    if req.status_code != 204:  # normal status code
+        req.raise_for_status()
