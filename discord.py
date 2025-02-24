@@ -114,7 +114,7 @@ if __name__ == '__main__':
         'title': 'Missing Submission',
         'type': 'rich',
         'color': 0xFF3131,
-        'description': past_due,
+        'description': past_due if past_due else 'No missing submission! 💯',
     })
 
     embeds.append({
