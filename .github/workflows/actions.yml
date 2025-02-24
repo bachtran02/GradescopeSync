@@ -29,4 +29,7 @@ jobs:
             USERNAME: ${{ secrets.USERNAME }}
             PASSWORD: ${{ secrets.PASSWORD }}
             WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+            COURSES_TERM: ${{ secrets.COURSES_TERM }}
+            COURSES_YEAR: ${{ secrets.COURSES_YEAR }}
+            COURSES_TO_EXCLUDE: ${{ secrets.COURSES_TO_EXCLUDE }}
         run: python discord.py
