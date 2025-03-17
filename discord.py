@@ -65,8 +65,11 @@ if __name__ == '__main__':
                 due_datetime = gs.to_datetime_object(assgn.due_time)
             if assgn.late_due_time:
                 late_due_datetime = gs.to_datetime_object(assgn.late_due_time)
-        
-            assignments_with_dt.append((assgn, due_datetime, late_due_datetime))
+
+            # only keep assignments with due date.
+            # exam is an example of assginment with no due date.  
+            if due_datetime:
+                assignments_with_dt.append((assgn, due_datetime, late_due_datetime))
 
         # sort assignments by due deadline
         sorted_assignments = sorted(assignments_with_dt, key=lambda x: x[1])
