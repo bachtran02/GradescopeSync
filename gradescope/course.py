@@ -58,7 +58,7 @@ class CourseClient(Client):
         '''
 
         student_courses = defaultdict(Course)
-        student_courses_html = parsed_account_resp.find('h1', class_ ='pageHeading', string = "Your Courses").next_sibling
+        student_courses_html = parsed_account_resp.find('h1', class_ ='pageHeading', string = "Course Dashboard").next_sibling
         for course_html in student_courses_html.find_all('a', class_ = 'courseBox'):
             shortname = course_html.find('h3', class_ = 'courseBox--shortname').text
             name = course_html.find('div', class_ = 'courseBox--name').text
